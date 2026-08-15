@@ -1,0 +1,10 @@
+{
+    "name": "LastActivityTracker",
+    "authors": [{"name": "femboytoucher504", "id": "000000000000000000"}],
+    "version": "1.0.0",
+    "description": "Shows last message, typing & read time inside user profile cards, global across all servers for Revenge Discord mod",
+    "permissions": ["webpack", "storage"],
+    "main": "index.ts",
+    "renderer": true
+}
+

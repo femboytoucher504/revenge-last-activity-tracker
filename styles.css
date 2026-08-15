@@ -1,0 +1,13 @@
+.activity-tracker-block {
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    font-size: 13px;
+    color: #b9bbbe;
+    line-height: 1.5;
+}
+.activity-tracker-block div {
+    margin: 2px 0;
+}
+
