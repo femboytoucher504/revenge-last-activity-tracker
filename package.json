@@ -2,6 +2,12 @@
   "name": "last-activity-tracker",
   "version": "1.0.0",
   "private": true,
-  "scripts": { "build": "node build.mjs" },
-  "devDependencies": { "esbuild": "^0.21.0" }
+  "scripts": { "build": "node build-rollup.mjs" },
+  "devDependencies": {
+    "rollup": "^4.9.0",
+    "rollup-plugin-esbuild": "^6.1.0",
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "@rollup/plugin-node-resolve": "^15.2.0",
+    "esbuild": "^0.21.0"
+  }
 }
