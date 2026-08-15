@@ -1,0 +1,8 @@
+{
+  "name": "LastActivityTracker",
+  "description": "Show user last message/typing/read time on profiles for Revenge",
+  "version": "1.0.0",
+  "authors": [{"name": "femboytoucher504"}],
+  "main": "index.js"
+}
+
