@@ -1,9 +1,9 @@
 const { after } = vendetta.patcher;
 const { findByProps } = vendetta.metro;
+const { showToast } = vendetta.ui.toasts;
 
 const userActivity = new Map();
 const unpatches = [];
-let unregisterCommand;
 
 const patchTyping = () => {
     const typingModule = findByProps("startTyping", "onTypingStart");
@@ -27,44 +27,37 @@ const patchMessageCreate = () => {
     );
 };
 
-const getActivityText = (userId) => {
-    const lastActive = userActivity.get(userId);
-    if (!lastActive) return "No tracked activity for this user yet.";
-    const diffMinutes = Math.floor((Date.now() - lastActive) / 60000);
-    return diffMinutes < 1 ? "Active now" : `Last seen ${diffMinutes}m ago (tracked locally)`;
+const patchProfileOpen = () => {
+    const dispatcher = findByProps("dispatch", "subscribe");
+    if (!dispatcher) return;
+    unpatches.push(
+        after("dispatch", dispatcher, ([action]) => {
+            if (action?.type !== "USER_PROFILE_FETCH_SUCCESS") return;
+            const userId = action.userProfile?.user?.id;
+            if (!userId) return;
+
+            const lastActive = userActivity.get(userId);
+            let text;
+            if (!lastActive) {
+                text = "No tracked activity yet";
+            } else {
+                const diffMinutes = Math.floor((Date.now() - lastActive) / 60000);
+                text = diffMinutes < 1 ? "Active now" : `Last seen ${diffMinutes}m ago`;
+            }
+            showToast(text);
+        })
+    );
 };
 
 export default {
     onLoad: () => {
         patchTyping();
         patchMessageCreate();
-
-        unregisterCommand = vendetta.commands.registerCommand({
-            name: "lastactive",
-            displayName: "lastactive",
-            description: "Show last tracked activity for a user",
-            displayDescription: "Show last tracked activity for a user",
-            options: [
-                {
-                    name: "user",
-                    displayName: "user",
-                    description: "The user to check",
-                    displayDescription: "The user to check",
-                    type: 6,
-                    required: true,
-                },
-            ],
-            execute: (args, ctx) => {
-                const userId = args.find((a) => a.name === "user")?.value;
-                const text = userId ? getActivityText(userId) : "No user provided.";
-                return { content: text };
-            },
-        });
+        patchProfileOpen();
     },
     onUnload: () => {
         unpatches.forEach((unpatch) => unpatch());
         unpatches.length = 0;
         userActivity.clear();
-        if (unregisterCommand) unregisterCommand();
     },
 };
