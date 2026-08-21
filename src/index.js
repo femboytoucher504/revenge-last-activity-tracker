@@ -6,9 +6,7 @@ const memoryActivity = new Map();
 let persistentStore = null;
 try {
     persistentStore = vendetta.plugin && vendetta.plugin.storage ? vendetta.plugin.storage : null;
-} catch (e) {
-    persistentStore = null;
-}
+} catch (e) {}
 
 const unpatches = [];
 
@@ -20,9 +18,7 @@ const setActivity = (userId) => {
             persistentStore.activity = persistentStore.activity || {};
             persistentStore.activity[userId] = Date.now();
         }
-    } catch (e) {
-        // never let a storage error propagate into the app-wide dispatcher
-    }
+    } catch (e) {}
 };
 
 const getActivityText = (userId) => {
@@ -51,33 +47,23 @@ const patchTyping = () => {
     } catch (e) {}
 };
 
-const patchMessageCreate = () => {
+// ONE single dispatch patch handling both cases, cheapest possible early-exit
+const patchDispatch = () => {
     try {
         const dispatcher = findByProps("dispatch", "subscribe");
         if (!dispatcher) return;
         unpatches.push(
             after("dispatch", dispatcher, ([action]) => {
+                const type = action && action.type;
+                if (type !== "MESSAGE_CREATE" && type !== "USER_PROFILE_FETCH_SUCCESS") return;
                 try {
-                    if (action?.type === "MESSAGE_CREATE" && action.message?.author?.id) {
-                        setActivity(action.message.author.id);
+                    if (type === "MESSAGE_CREATE") {
+                        const authorId = action.message && action.message.author && action.message.author.id;
+                        if (authorId) setActivity(authorId);
+                    } else {
+                        const userId = action.userProfile && action.userProfile.user && action.userProfile.user.id;
+                        if (userId) showToast(getActivityText(userId));
                     }
-                } catch (e) {}
-            })
-        );
-    } catch (e) {}
-};
-
-const patchProfileOpen = () => {
-    try {
-        const dispatcher = findByProps("dispatch", "subscribe");
-        if (!dispatcher) return;
-        unpatches.push(
-            after("dispatch", dispatcher, ([action]) => {
-                try {
-                    if (action?.type !== "USER_PROFILE_FETCH_SUCCESS") return;
-                    const userId = action.userProfile?.user?.id;
-                    if (!userId) return;
-                    showToast(getActivityText(userId));
                 } catch (e) {}
             })
         );
@@ -87,8 +73,7 @@ const patchProfileOpen = () => {
 export default {
     onLoad: () => {
         patchTyping();
-        patchMessageCreate();
-        patchProfileOpen();
+        patchDispatch();
     },
     onUnload: () => {
         unpatches.forEach((unpatch) => {
